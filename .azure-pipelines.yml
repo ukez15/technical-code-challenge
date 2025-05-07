@@ -1,0 +1,43 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  ACR_NAME: myacr.azurecr.io
+  IMAGE_TAG: $(Build.BuildId)
+
+stages:
+- stage: BuildAndTest
+  jobs:
+  - job: Build
+    steps:
+    - task: Docker@2
+      displayName: Build frontend
+      inputs:
+        containerRegistry: 'my-acr-connection'
+        repository: 'frontend'
+        Dockerfile: 'frontend/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+
+    - task: Docker@2
+      displayName: Build backend
+      inputs:
+        containerRegistry: 'my-acr-connection'
+        repository: 'backend'
+        Dockerfile: 'backend/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+        
+    - script: echo "🧪 Add test scripts here for frontend/backend"
+      displayName: Run Tests
+
+# - stage: UpdateHelmValues
+#   dependsOn: BuildAndTest
+#   jobs:
+#   - job: UpdateYAML
+#     steps:
+#     - script: ./scripts/updatehelmvalues.sh
+        

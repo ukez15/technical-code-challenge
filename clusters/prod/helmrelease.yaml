@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: toy-store
+  name: toyshop
   namespace: toy-store
 spec:
   interval: 1m
@@ -14,5 +14,9 @@ spec:
         namespace: flux-system
   values:
     image:
-      repository: myacr.azurecr.io/frontend
-      tag: v1
+      frontend:
+        repository: myacr.azurecr.io/frontend
+        tag: v1
+      backend:
+        repository: myacr.azurecr.io/backend
+        tag: v1
