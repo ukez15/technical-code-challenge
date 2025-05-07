@@ -64,8 +64,6 @@ kind create cluster --name toyshop
 ```bash
 kubectl create namespace toy-shop
 helm install toy-shop ./charts -n toy-shop
-# kind load docker-image toyshop-frontend --name toyshop
-# kind load docker-image toyshop-backend --name toyshop
 ```
 
 #### 🗂️ Step 4: Check all the resources
