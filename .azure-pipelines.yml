@@ -22,11 +22,29 @@ stages:
 - stage: TerraformInfra
   dependsOn: AzureLogin
   variables:
-  - group: terraform-auth  # this group contains ARM_* variables
+  - group: terraform-auth
 
   jobs:
   - job: buildInfra
     steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "🔐 Registering AKS provider if needed..."
+          az provider register --namespace Microsoft.ContainerService
+          while true; do
+            STATUS=$(az provider show --namespace Microsoft.ContainerService --query registrationState -o tsv)
+            echo "Registration status: $STATUS"
+            if [ "$STATUS" = "Registered" ]; then
+              break
+            fi
+            echo "Waiting for provider to register..."
+            sleep 5
+          done
+    
     - script: |
         echo "🧱 Installing Terraform..."
         curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
