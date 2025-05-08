@@ -89,10 +89,8 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           echo "✅ Logged in to Azure for ACR"
-
-    - script: |
-        make get-azure-resources
-      displayName: 'Builds and pushes Docker images to ACR'
+          make get-azure-resources
+        displayName: 'Builds and pushes Docker images to ACR'
 
 - stage: DeployToAKS
   dependsOn: BuildImages
@@ -106,10 +104,8 @@ stages:
         scriptLocation: inlineScript
         inlineScript: |
           echo "✅ Logged in to Azure for Helm deployment"
-
-    - script: |
-        make deploy-azure
-      displayName: 'Deploy to AKS cluster'
+          make deploy-azure
+        displayName: 'Deploy to AKS cluster'
 
 - stage: InstallFlux
   dependsOn: DeployToAKS
