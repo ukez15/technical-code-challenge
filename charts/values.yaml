@@ -6,13 +6,28 @@
 replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image:
-  frontend:
-    repository: toyshopacr12345.azurecr.io/frontend
-    tag: latest
-  backend:
-    repository: toyshopacr12345.azurecr.io/backend
-    tag: latest
+productService:
+  image:
+    repository: "ghcr.io/azure-samples/aks-store-demo/product-service"
+    tag: "latest"
+
+orderService:
+  queueHost: "rabbitmq"
+  queuePort: "5672"
+  queueUsername: "username"
+  queuePassword: "password"
+  queueName: "orders"
+  queueTransport: ""
+  image:
+    repository: "ghcr.io/azure-samples/aks-store-demo/order-service"
+    tag: "latest"
+
+storeFront:
+  image:
+    repository: "ghcr.io/azure-samples/aks-store-demo/store-front"
+    tag: "latest"
+  serviceType: LoadBalancer
+
 
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/

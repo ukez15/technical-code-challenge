@@ -3,7 +3,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deny-all
+  name: allow-all
 spec:
   podSelector: {}
   policyTypes:
@@ -48,7 +48,7 @@ spec:
   selector:
     app: product-service
 ---
-# Source: charts/templates/rabbitmqservice.yaml
+# Source: charts/templates/rabbitservice.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -97,7 +97,7 @@ spec:
         "kubernetes.io/os": linux
       containers:
       - name: order-service
-        image: ghcr.io/azure-samples/aks-store-demo/order-service:latest
+        image: "ghcr.io/azure-samples/aks-store-demo/order-service:latest"
         ports:
         - containerPort: 3000
         env:
@@ -153,8 +153,7 @@ spec:
             cpu: 75m
             memory: 128Mi
 ---
-# Source: charts/templates/orderservicedeployment.yaml
-# Source: charts/templates/aks-store.yaml
+# Source: charts/templates/productservicedeployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -173,7 +172,7 @@ spec:
         "kubernetes.io/os": linux
       containers:
       - name: product-service
-        image: ghcr.io/azure-samples/aks-store-demo/product-service:latest
+        image: "ghcr.io/azure-samples/aks-store-demo/product-service:latest"
         ports:
         - containerPort: 3002
         env: 
@@ -220,7 +219,7 @@ spec:
         "kubernetes.io/os": linux
       containers:
       - name: store-front
-        image: ghcr.io/azure-samples/aks-store-demo/store-front:latest
+        image: "ghcr.io/azure-samples/aks-store-demo/store-front:latest"
         ports:
         - containerPort: 8080
           name: store-front
@@ -258,7 +257,7 @@ spec:
           initialDelaySeconds: 3
           periodSeconds: 3
 ---
-# Source: charts/templates/rabbitmqstatefulset.yaml
+# Source: charts/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -308,7 +307,7 @@ spec:
           - key: rabbitmq_enabled_plugins
             path: enabled_plugins
 ---
-# Source: charts/templates/ingress.yaml
+# Source: charts/templates/ingresscontroller.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

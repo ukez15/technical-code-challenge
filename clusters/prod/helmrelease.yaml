@@ -7,16 +7,19 @@ spec:
   interval: 1m
   chart:
     spec:
-      chart: ./charts
+      chart: ./charts/aks-store-demo
       sourceRef:
         kind: GitRepository
         name: toyshop-code
         namespace: flux-system
   values:
     image:
-      frontend:
-        repository: myacr.azurecr.io/frontend
-        tag: v1
-      backend:
-        repository: myacr.azurecr.io/backend
-        tag: v1
+      productService:
+        repository: "ghcr.io/azure-samples/aks-store-demo/product-service"
+        tag: "latest"
+      orderService:
+        repository: "ghcr.io/azure-samples/aks-store-demo/order-service"
+        tag: "latest"
+      storeFront:
+        repository: "ghcr.io/azure-samples/aks-store-demo/store-front"
+        tag: "latest"

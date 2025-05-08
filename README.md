@@ -13,67 +13,42 @@ Let’s go step-by-step like a fun adventure! 🧭🎒
 
 ## 🛠️ 1. How to Run the Toy Shop on Your Computer (Locally)
 
-### 📦 Option 1: Use Docker (Fast and Simple)
+> So you can play with your toy shop on your computer before going to the cloud!
 
-1. 🐳 Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is installed.
+### 🧰 Step 1: Prerequisites
 
-2. Build your app like this:
+Make sure you have these installed:
 
-```bash
-docker build -t toyshop-frontend ./frontend
-docker build -t toyshop-backend ./backend
-```
+* [Docker](https://www.docker.com/)
+* [Kind](https://kind.sigs.k8s.io/)
+* [Kubectl](https://kubernetes.io/docs/tasks/tools/)
+* [Helm](https://helm.sh/)
+* [Make](https://www.gnu.org/software/make/)
 
-3. Run the apps:
-
-```bash
-docker run -p 3000:3000 toyshop-frontend
-docker run -p 8000:8000 toyshop-backend
-```
-
-Visit:
-
-* 🖥️ Frontend → [http://localhost:3000](http://localhost:3000)
-* 📡 Backend → [http://localhost:8000](http://localhost:8000)
-
----
-```bash
-Note: This option is only available if you have the app source code built on your machine using docker.
-For our purpose, we start with option 2.
-```
-
-
-### ☸️ Option 2: Use Kind (Kubernetes in Docker!)
+### ☸️ Step 2: Run with Kind + Helm
 
 > Like building a mini cloud on your own laptop!
 
-#### 🧰 Step 1: Install [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
-
-```bash
-brew install kind      # (macOS)
-```
-
-#### 🏗️ Step 2: Create a Cluster
+#### 🏗️ Step 1: Create a Cluster
 
 ```bash
 kind create cluster --name toyshop
 ```
 
-#### 🐳 Step 3: Install your helm chart
+#### 🐳 Step 2: Install your helm chart
 
 ```bash
 kubectl create namespace toy-shop
 helm install toy-shop ./charts -n toy-shop
 ```
 
-#### 🗂️ Step 4: Check all the resources
+#### 🗂️ Step 3: Check all the resources
 
 ```bash
 kubectl get all -n toy-shop
-
 ```
 
-#### 🔍 Step 5: See the frontend
+#### 🔍 Step 4: See the frontend
 
 ```bash
 kubectl port-forward svc/store-front 3000:80 -n toy-shop
@@ -85,6 +60,20 @@ You’re now running your own Toy Shop in Kind! 🏰✨
 
 ---
 
+## Alternative
+
+I've wrapped all these commands in a make file that you just need to run in bash!  🏰✨
+
+```bash
+make kind-up         # Create local Kubernetes cluster with Kind
+make helm-install    # Install helm chart
+make check-all-resources       # Check resources in kuberentes
+make see-frontend    # See the front end
+```
+
+Then go to [http://localhost:3000](http://localhost:3000) to see your frontend! 🎠
+
+---
 ## 🔁 2. How to Configure and Run the CI/CD Pipeline (Azure DevOps Robots 🤖)
 
 > Robots that watch your code, build it, test it, and ship it!
@@ -93,8 +82,7 @@ You’re now running your own Toy Shop in Kind! 🏰✨
 
 * GitHub repo created ✅
 * Azure DevOps project ✅
-* Azure Container Registry (ACR) set up ✅
-* Dockerfiles ready ✅
+* Azure Service Principal setup ✅
 
 ---
 
@@ -150,7 +138,7 @@ Then run:
 ```bash
 flux bootstrap github \
   --owner=your-github-username \
-  --repository=aks-toyshop-flux \
+  --repository=your-repository-name \
   --branch=main \
   --path=clusters/prod \
   --personal
@@ -165,4 +153,7 @@ Flux keeps your cluster synced with GitHub! 🪄✨
 
 ---
 
+```bash
+PS: All these steps are run in the pipeline to make deployment seamless
+```
 ## 🎉 You Did It!

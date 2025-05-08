@@ -4,19 +4,32 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-variables:
-  IMAGE_TAG: $(Build.BuildId)
-  ACR_NAME: toyshopacr12345
-  ACR_LOGIN_SERVER: toyshopacr12345.azurecr.io
-
 stages:
-- stage: TerraformInfra
+- stage: AzureLogin
   jobs:
-  - job: BuildInfra
+  - job: login
     steps:
-    - task: TerraformInstaller@1
+    # 🔐 Azure login using service connection
+    - task: AzureCLI@2
       inputs:
-        terraformVersion: '1.5.0'
+        azureSubscription: 'toyshop-app'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "✅ Logged in to Azure!"
+
+- stage: TerraformInfra
+  dependsOn: AzureLogin
+  jobs:
+  - job: buildInfra
+    steps:
+    - script: |
+        echo "🧱 Installing Terraform..."
+        curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+        unzip terraform.zip
+        sudo mv terraform /usr/local/bin/
+        terraform -v
+      displayName: 'Install Terraform'
 
     - script: |
         cd infra
@@ -24,29 +37,48 @@ stages:
         terraform apply -auto-approve
       displayName: 'Apply Terraform'
 
-# - stage: BuildImages
-#   dependsOn: TerraformInfra
-#   jobs:
-#   - job: Build
-#     steps:
-#       - script: |
-#           make build
-#         displayName: 'Run Makefile Build'
-
-- stage: PushImages
+- stage: BuildImages
   dependsOn: TerraformInfra
   jobs:
-  - job: pushImages
+  - job: buildpushImages
     steps:
       - script: |
           make get-azure-resources
         displayName: 'Builds all container images and pushes to ACR'
 
-# - stage: DeployToAKS
-#   dependsOn: PushImages
-#   jobs:
-#   - job: Deploy
-#     steps:
-#     - script: |
-#         make deploy-azure
-#       displayName: 'Deploy to AKS cluster'
+- stage: DeployToAKS
+  dependsOn: BuildImages
+  jobs:
+  - job: Deploy
+    steps:
+    - script: |
+        make deploy-azure
+      displayName: 'Deploy to AKS cluster'
+
+- stage: InstallFlux
+  dependsOn: DeployToAKS
+  jobs:
+  - job: fluxInstall
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'toyshop-app'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "🔑 Logging in to AKS"
+          az aks get-credentials --resource-group toyshop-rg --name toyshop-aks
+
+          echo "🔧 Installing Flux CLI"
+          curl -s https://fluxcd.io/install.sh | bash
+          export PATH=$PATH:/home/vsts/.flux/bin
+
+          echo "📦 Bootstrapping Flux"
+          flux bootstrap github \
+            --owner=ukez15 \
+            --repository=technical-code-challenge \
+            --branch=main \
+            --path=clusters/prod \
+            --personal
