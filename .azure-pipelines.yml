@@ -21,17 +21,12 @@ stages:
 # 🧱 Terraform Infra
 - stage: TerraformInfra
   dependsOn: AzureLogin
+  variables:
+  - group: terraform-auth
+  
   jobs:
   - job: buildInfra
     steps:
-    - task: AzureCLI@2  # 🔐 Login here too
-      inputs:
-        azureSubscription: 'AzureDevopsSP-MSDN'
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-          echo "✅ Logged in to Azure for Terraform"
-
     - script: |
         echo "🧱 Installing Terraform..."
         curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
