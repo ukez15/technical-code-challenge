@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.50.0" # Stable AKS API usage
+      version = "=4.27.0"
     }
   }
 }
