@@ -23,6 +23,14 @@ stages:
   jobs:
   - job: buildInfra
     steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "✅ Logged in to Azure for Terraform"
+          
     - script: |
         echo "🧱 Installing Terraform..."
         curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
@@ -42,6 +50,14 @@ stages:
   jobs:
   - job: buildpushImages
     steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "✅ Logged in
+          
       - script: |
           make get-azure-resources
         displayName: 'Builds all container images and pushes to ACR'
@@ -51,6 +67,14 @@ stages:
   jobs:
   - job: Deploy
     steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "✅ Logged in
+          
     - script: |
         make deploy-azure
       displayName: 'Deploy to AKS cluster'
