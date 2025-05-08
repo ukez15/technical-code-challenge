@@ -5,39 +5,48 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  ACR_NAME: myacr.azurecr.io
   IMAGE_TAG: $(Build.BuildId)
+  ACR_NAME: toyshopacr12345
+  ACR_LOGIN_SERVER: toyshopacr12345.azurecr.io
 
 stages:
-- stage: BuildAndTest
+- stage: TerraformInfra
   jobs:
-  - job: Build
+  - job: BuildInfra
     steps:
-    - task: Docker@2
-      displayName: Build frontend
+    - task: TerraformInstaller@1
       inputs:
-        containerRegistry: 'my-acr-connection'
-        repository: 'frontend'
-        Dockerfile: 'frontend/Dockerfile'
-        tags: |
-          $(Build.BuildId)
+        terraformVersion: '1.5.0'
 
-    - task: Docker@2
-      displayName: Build backend
-      inputs:
-        containerRegistry: 'my-acr-connection'
-        repository: 'backend'
-        Dockerfile: 'backend/Dockerfile'
-        tags: |
-          $(Build.BuildId)
-        
-    - script: echo "🧪 Add test scripts here for frontend/backend"
-      displayName: Run Tests
+    - script: |
+        cd infra
+        terraform init
+        terraform apply -auto-approve
+      displayName: 'Apply Terraform'
 
-# - stage: UpdateHelmValues
-#   dependsOn: BuildAndTest
+# - stage: BuildImages
+#   dependsOn: TerraformInfra
 #   jobs:
-#   - job: UpdateYAML
+#   - job: Build
 #     steps:
-#     - script: ./scripts/updatehelmvalues.sh
-        
+#       - script: |
+#           make build
+#         displayName: 'Run Makefile Build'
+
+- stage: PushImages
+  dependsOn: TerraformInfra
+  jobs:
+  - job: pushImages
+    steps:
+      - script: |
+          make get-azure-resources
+        displayName: 'Builds all container images and pushes to ACR'
+
+# - stage: DeployToAKS
+#   dependsOn: PushImages
+#   jobs:
+#   - job: Deploy
+#     steps:
+#     - script: |
+#         make deploy-azure
+#       displayName: 'Deploy to AKS cluster'

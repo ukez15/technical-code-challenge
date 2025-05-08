@@ -8,11 +8,12 @@ replicaCount: 1
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
   frontend:
-    repository: myacr.azurecr.io/frontend
-    tag: v1
+    repository: toyshopacr12345.azurecr.io/frontend
+    tag: latest
   backend:
-    repository: myacr.azurecr.io/backend
-    tag: v1
+    repository: toyshopacr12345.azurecr.io/backend
+    tag: latest
+
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
