@@ -66,6 +66,8 @@ stages:
             if ! terraform state list | grep azurerm_resource_group.rg; then
               echo "📦 Importing resource group into state..."
               terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
+              terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerService/managedClusters/toyshop-aks"
+              terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg//providers/Microsoft.ContainerRegistry/registries/toyshopacr12345"
             else
               echo "✅ RG is already in Terraform state."
             fi
