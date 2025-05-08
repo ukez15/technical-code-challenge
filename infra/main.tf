@@ -19,7 +19,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "rg" {
   name     = "toyshop-rg"
-  location = "North Europe"
+  location = "West Europe"
 }
 
 resource "azurerm_container_registry" "acr" {
