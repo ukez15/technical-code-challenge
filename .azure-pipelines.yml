@@ -5,11 +5,11 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
+# 🔐 Azure Login (starter stage)
 - stage: AzureLogin
   jobs:
   - job: login
     steps:
-    # 🔐 Azure login using service connection
     - task: AzureCLI@2
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
@@ -18,19 +18,20 @@ stages:
         inlineScript: |
           echo "✅ Logged in to Azure!"
 
+# 🧱 Terraform Infra
 - stage: TerraformInfra
   dependsOn: AzureLogin
   jobs:
   - job: buildInfra
     steps:
-    - task: AzureCLI@2
+    - task: AzureCLI@2  # 🔐 Login here too
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
           echo "✅ Logged in to Azure for Terraform"
-          
+
     - script: |
         echo "🧱 Installing Terraform..."
         curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
@@ -45,40 +46,43 @@ stages:
         terraform apply -auto-approve
       displayName: 'Apply Terraform'
 
+# 🐳 Build and Push Images
 - stage: BuildImages
   dependsOn: TerraformInfra
   jobs:
   - job: buildpushImages
     steps:
-    - task: AzureCLI@2
+    - task: AzureCLI@2  # 🔐 Login to access ACR
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in
-          
-      - script: |
-          make get-azure-resources
-        displayName: 'Builds all container images and pushes to ACR'
+          echo "✅ Logged in to Azure for ACR access"
 
+    - script: |
+        make get-azure-resources
+      displayName: 'Builds all container images and pushes to ACR'
+
+# 🚀 Deploy to AKS
 - stage: DeployToAKS
   dependsOn: BuildImages
   jobs:
   - job: Deploy
     steps:
-    - task: AzureCLI@2
+    - task: AzureCLI@2  # 🔐 Login to pull kube credentials
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in
-          
+          echo "✅ Logged in to Azure to deploy to AKS"
+
     - script: |
         make deploy-azure
       displayName: 'Deploy to AKS cluster'
 
+# ✨ Install Flux
 - stage: InstallFlux
   dependsOn: DeployToAKS
   jobs:
@@ -86,7 +90,7 @@ stages:
     steps:
     - checkout: self
 
-    - task: AzureCLI@2
+    - task: AzureCLI@2  # 🔐 Login to get AKS access and install Flux
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
