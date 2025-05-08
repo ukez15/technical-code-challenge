@@ -58,17 +58,18 @@ stages:
         terraform init -upgrade
 
         echo "🔍 Checking if resource group exists in Azure..."
-        az group exists --name toyshop-rg | grep true || SKIP_IMPORT=true
-
-        if [ "$SKIP_IMPORT" != "true" ]; then
-          echo "📦 Importing existing RG into Terraform state (if not already)..."
-          terraform state list | grep azurerm_resource_group.rg || \
-          terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
+        if az group exists --name toyshop-rg | grep true; then
+          echo "✅ RG exists — checking if it's in state..."
+          if ! terraform state list | grep azurerm_resource_group.rg; then
+            echo "📦 Importing resource group into state..."
+            terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
+          else
+            echo "✅ RG is already in Terraform state."
+          fi
         else
-          echo "✅ RG does not exist — skipping import."
+          echo "✅ RG does not exist — Terraform will create it."
         fi
 
-        echo "🚀 Applying Terraform"
         terraform apply -auto-approve
       displayName: 'Run Terraform'
       env:
