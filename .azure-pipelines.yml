@@ -44,7 +44,7 @@ stages:
             echo "Waiting for provider to register..."
             sleep 5
           done
-    
+
     - script: |
         echo "🧱 Installing Terraform..."
         curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
@@ -55,7 +55,17 @@ stages:
 
     - script: |
         cd infra
-        terraform init
+
+        echo "🗂️ Initializing Terraform..."
+        terraform init -upgrade
+
+        echo "🕵️ Checking if RG is already in state..."
+        terraform state list | grep azurerm_resource_group.rg || {
+          echo "📦 Importing existing RG into Terraform state..."
+          terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
+        }
+
+        echo "🚀 Applying Terraform"
         terraform apply -auto-approve
       displayName: 'Run Terraform'
       env:
