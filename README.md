@@ -82,7 +82,7 @@ Then go to [http://localhost:3000](http://localhost:3000) to see your frontend! 
 
 * GitHub repo created ✅
 * Azure DevOps project ✅
-* Azure Service Principal setup ✅
+* Azure Service connection setup ✅
 
 ---
 

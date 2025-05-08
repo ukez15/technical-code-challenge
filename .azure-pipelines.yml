@@ -12,7 +12,7 @@ stages:
     # 🔐 Azure login using service connection
     - task: AzureCLI@2
       inputs:
-        azureSubscription: 'toyshop-app'
+        azureSubscription: 'AzureDevopsSP'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
@@ -64,7 +64,7 @@ stages:
 
     - task: AzureCLI@2
       inputs:
-        azureSubscription: 'toyshop-app'
+        azureSubscription: 'AzureDevopsSP'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
