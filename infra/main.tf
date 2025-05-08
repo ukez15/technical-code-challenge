@@ -9,6 +9,7 @@ terraform {
 
 provider "azurerm" {
   features {}
+  skip_provider_registration = true
 
   subscription_id = var.subscription_id
   client_id       = var.client_id
@@ -18,7 +19,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "rg" {
   name     = "toyshop-rg"
-  location = "East US"
+  location = "West Europe"
 }
 
 resource "azurerm_container_registry" "acr" {
