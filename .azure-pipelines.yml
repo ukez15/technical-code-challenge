@@ -5,7 +5,6 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
-# 🔐 Azure Login (starter stage)
 - stage: AzureLogin
   jobs:
   - job: login
@@ -18,7 +17,6 @@ stages:
         inlineScript: |
           echo "✅ Logged in to Azure!"
 
-# 🧱 Terraform Infra
 - stage: TerraformInfra
   dependsOn: AzureLogin
   variables:
@@ -59,11 +57,16 @@ stages:
         echo "🗂️ Initializing Terraform..."
         terraform init -upgrade
 
-        echo "🕵️ Checking if RG is already in state..."
-        terraform state list | grep azurerm_resource_group.rg || {
-          echo "📦 Importing existing RG into Terraform state..."
+        echo "🔍 Checking if resource group exists in Azure..."
+        az group exists --name toyshop-rg | grep true || SKIP_IMPORT=true
+
+        if [ "$SKIP_IMPORT" != "true" ]; then
+          echo "📦 Importing existing RG into Terraform state (if not already)..."
+          terraform state list | grep azurerm_resource_group.rg || \
           terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
-        }
+        else
+          echo "✅ RG does not exist — skipping import."
+        fi
 
         echo "🚀 Applying Terraform"
         terraform apply -auto-approve
@@ -74,43 +77,40 @@ stages:
         TF_VAR_subscription_id: $(ARM_SUBSCRIPTION_ID)
         TF_VAR_tenant_id: $(ARM_TENANT_ID)
 
-# 🐳 Build and Push Images
 - stage: BuildImages
   dependsOn: TerraformInfra
   jobs:
   - job: buildpushImages
     steps:
-    - task: AzureCLI@2  # 🔐 Login to access ACR
+    - task: AzureCLI@2
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in to Azure for ACR access"
+          echo "✅ Logged in to Azure for ACR"
 
     - script: |
         make get-azure-resources
-      displayName: 'Builds all container images and pushes to ACR'
+      displayName: 'Builds and pushes Docker images to ACR'
 
-# 🚀 Deploy to AKS
 - stage: DeployToAKS
   dependsOn: BuildImages
   jobs:
   - job: Deploy
     steps:
-    - task: AzureCLI@2  # 🔐 Login to pull kube credentials
+    - task: AzureCLI@2
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in to Azure to deploy to AKS"
+          echo "✅ Logged in to Azure for Helm deployment"
 
     - script: |
         make deploy-azure
       displayName: 'Deploy to AKS cluster'
 
-# ✨ Install Flux
 - stage: InstallFlux
   dependsOn: DeployToAKS
   jobs:
@@ -118,20 +118,20 @@ stages:
     steps:
     - checkout: self
 
-    - task: AzureCLI@2  # 🔐 Login to get AKS access and install Flux
+    - task: AzureCLI@2
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "🔑 Logging in to AKS"
+          echo "🔑 Getting AKS credentials"
           az aks get-credentials --resource-group toyshop-rg --name toyshop-aks
 
           echo "🔧 Installing Flux CLI"
           curl -s https://fluxcd.io/install.sh | bash
           export PATH=$PATH:/home/vsts/.flux/bin
 
-          echo "📦 Bootstrapping Flux"
+          echo "🚀 Bootstrapping Flux"
           flux bootstrap github \
             --owner=ukez15 \
             --repository=technical-code-challenge \
