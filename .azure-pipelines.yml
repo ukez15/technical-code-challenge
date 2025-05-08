@@ -51,32 +51,35 @@ stages:
         terraform -v
       displayName: 'Install Terraform'
 
-    - script: |
-        cd infra
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          cd infra
+          terraform init -upgrade
 
-        echo "🗂️ Initializing Terraform..."
-        terraform init -upgrade
-
-        echo "🔍 Checking if resource group exists in Azure..."
-        if az group exists --name toyshop-rg | grep true; then
-          echo "✅ RG exists — checking if it's in state..."
-          if ! terraform state list | grep azurerm_resource_group.rg; then
-            echo "📦 Importing resource group into state..."
-            terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
+          echo "🔍 Checking if resource group exists in Azure..."
+          if az group exists --name toyshop-rg | grep true; then
+            echo "✅ RG exists — checking if it's in state..."
+            if ! terraform state list | grep azurerm_resource_group.rg; then
+              echo "📦 Importing resource group into state..."
+              terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
+            else
+              echo "✅ RG is already in Terraform state."
+            fi
           else
-            echo "✅ RG is already in Terraform state."
+            echo "✅ RG does not exist — Terraform will create it."
           fi
-        else
-          echo "✅ RG does not exist — Terraform will create it."
-        fi
 
-        terraform apply -auto-approve
-      displayName: 'Run Terraform'
+          terraform apply -auto-approve
       env:
         TF_VAR_client_id: $(ARM_CLIENT_ID)
         TF_VAR_client_secret: $(ARM_CLIENT_SECRET)
         TF_VAR_subscription_id: $(ARM_SUBSCRIPTION_ID)
         TF_VAR_tenant_id: $(ARM_TENANT_ID)
+
 
 - stage: BuildImages
   dependsOn: TerraformInfra
