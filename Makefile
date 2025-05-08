@@ -45,13 +45,21 @@ get-azure-resources: ## Get Provisioned Azure Resources, builds docker images an
 	fi
 
 .PHONY: deploy-azure
-deploy-azure: kustomize toy-store-all-in-one.yaml ## Deploy to AKS cluster
-	@$(KUSTOMIZE) create --resources toy-store-all-in-one.yaml
-	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/order-service=$(ACR_NAME).azurecr.io/order-service:$(IMAGE_VERSION)
-	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/makeline-service=$(ACR_NAME).azurecr.io/makeline-service:$(IMAGE_VERSION)
-	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/product-service=$(ACR_NAME).azurecr.io/product-service:$(IMAGE_VERSION)
-	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/store-front=$(ACR_NAME).azurecr.io/store-front:$(IMAGE_VERSION)
-	@kubectl apply -k .
+# deploy-azure: kustomize toy-store-all-in-one.yaml ## Deploy to AKS cluster
+# 	@$(KUSTOMIZE) create --resources toy-store-all-in-one.yaml
+# 	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/order-service=$(ACR_NAME).azurecr.io/order-service:$(IMAGE_VERSION)
+# 	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/makeline-service=$(ACR_NAME).azurecr.io/makeline-service:$(IMAGE_VERSION)
+# 	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/product-service=$(ACR_NAME).azurecr.io/product-service:$(IMAGE_VERSION)
+# 	@$(KUSTOMIZE) edit set image ghcr.io/azure-samples/aks-store-demo/store-front=$(ACR_NAME).azurecr.io/store-front:$(IMAGE_VERSION)
+# 	@kubectl apply -k .
+	@echo "🚀 Deploying to AKS using Helm..."
+	@az aks get-credentials -n $(AKS_NAME) -g $(RG_NAME)
+	@helm upgrade --install toy-shop ./chart \
+		--set orderService.image.repository=$(ACR_NAME).azurecr.io/order-service:$(IMAGE_VERSION) \
+		--set productService.image.repository=$(ACR_NAME).azurecr.io/product-service:$(IMAGE_VERSION) \
+		--set storeFront.image.repository=$(ACR_NAME).azurecr.io/store-front:$(IMAGE_VERSION) \
+		--namespace toy-shop \
+		--create-namespace
 
 
 .PHONY: clean-azure

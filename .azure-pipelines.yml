@@ -64,19 +64,21 @@ stages:
           if az group exists --name toyshop-rg | grep true; then
             echo "✅ RG exists — checking if it's in state..."
             if ! terraform state list | grep azurerm_resource_group.rg; then
-              echo "📦 Importing resource group into state..."
               terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
-              echo "📦 Importing kubernetes cluster into state..."
-              terraform import azurerm_kubernetes_cluster.aks "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerService/managedClusters/toyshop-aks"
-              echo "📦 Importing container registry into state..."
-              terraform import azurerm_container_registry.acr "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerRegistry/registries/toyshopacr12345"
-            else
-              echo "✅ RG is already in Terraform state."
             fi
-          else
-            echo "✅ RG does not exist — Terraform will create it."
           fi
 
+          echo "🔍 Checking if ACR is in state..."
+          if ! terraform state list | grep azurerm_container_registry.acr; then
+            terraform import azurerm_container_registry.acr "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerRegistry/registries/toyshopacr12345"
+          fi
+
+          echo "🔍 Checking if AKS is in state..."
+          if ! terraform state list | grep azurerm_kubernetes_cluster.aks; then
+            terraform import azurerm_kubernetes_cluster.aks "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerService/managedClusters/toyshop-aks"
+          fi
+
+          echo "🚀 Running Terraform Apply"
           terraform apply -auto-approve
       env:
         TF_VAR_client_id: $(ARM_CLIENT_ID)
@@ -111,7 +113,19 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in to Azure for Helm deployment"
+          echo "🔐 Logging into AKS"
+          az aks get-credentials --resource-group toyshop-rg --name toyshop-aks
+
+          echo "🔧 Installing Helm (if not already present)..."
+          helm version || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+          echo "🔧 Installing Kustomize (if needed)..."
+          if ! command -v kustomize >/dev/null 2>&1; then
+            curl -s \"https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh\" | bash
+            sudo mv kustomize /usr/local/bin/
+          fi
+
+          echo "🚀 Running Helm deployment..."
           make deploy-azure
         displayName: 'Deploy to AKS cluster'
 
