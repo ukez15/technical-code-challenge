@@ -19,30 +19,48 @@ local: kind-up helm-install check-all-resources see-frontend ## do a helm instal
 azure: get-azure-resources deploy-azure ## Provision Azure Resources, build all container images, push images to Azure Container Registry, and deploy to AKS cluster
 
 ##@ Provision Azure Resources
-
 .PHONY: get-azure-resources
-get-azure-resources: ## Get Provisioned Azure Resources, builds docker images and push docker images to ACR
+get-azure-resources: ## Get provisioned Azure resources, build or import images to ACR
 	@echo "Getting the Azure Resources"
 	@az aks update -n $(AKS_NAME) -g $(RG_NAME) --attach-acr $(ACR_NAME)
 	@az aks get-credentials -n $(AKS_NAME) -g $(RG_NAME)
 
-	@if [ "$(BUILD_ORDER_SERVICE)" = true ]; then \
-		az acr build -r $(ACR_NAME) -t order-service:$(IMAGE_VERSION) ./src/order-service; \
+	@echo "🔍 Checking order-service:$(IMAGE_VERSION)"
+	@if ! az acr repository show-tags --name $(ACR_NAME) --repository order-service --query "[?@=='$(IMAGE_VERSION)']" -o tsv | grep -q $(IMAGE_VERSION); then \
+		echo "⏳ Building or importing order-service:$(IMAGE_VERSION)..."; \
+		if [ "$(BUILD_ORDER_SERVICE)" = true ]; then \
+			az acr build -r $(ACR_NAME) -t order-service:$(IMAGE_VERSION) ./src/order-service; \
+		else \
+			az acr import -n $(ACR_NAME) --source ghcr.io/azure-samples/aks-store-demo/order-service:latest --image order-service:$(IMAGE_VERSION); \
+		fi; \
 	else \
-		az acr import -n $(ACR_NAME) --source ghcr.io/azure-samples/aks-store-demo/order-service:latest --image order-service:$(IMAGE_VERSION); \
+		echo "✅ order-service:$(IMAGE_VERSION) already exists. Skipping."; \
 	fi
 
-	@if [ "$(BUILD_PRODUCT_SERVICE)" = true ]; then \
-		az acr build -r $(ACR_NAME) -t product-service:$(IMAGE_VERSION) ./src/product-service; \
+	@echo "🔍 Checking product-service:$(IMAGE_VERSION)"
+	@if ! az acr repository show-tags --name $(ACR_NAME) --repository product-service --query "[?@=='$(IMAGE_VERSION)']" -o tsv | grep -q $(IMAGE_VERSION); then \
+		echo "⏳ Building or importing product-service:$(IMAGE_VERSION)..."; \
+		if [ "$(BUILD_PRODUCT_SERVICE)" = true ]; then \
+			az acr build -r $(ACR_NAME) -t product-service:$(IMAGE_VERSION) ./src/product-service; \
+		else \
+			az acr import -n $(ACR_NAME) --source ghcr.io/azure-samples/aks-store-demo/product-service:latest --image product-service:$(IMAGE_VERSION); \
+		fi; \
 	else \
-		az acr import -n $(ACR_NAME) --source ghcr.io/azure-samples/aks-store-demo/product-service:latest --image product-service:$(IMAGE_VERSION); \
+		echo "✅ product-service:$(IMAGE_VERSION) already exists. Skipping."; \
 	fi
 
-	@if [ "$(BUILD_STORE_FRONT)" = true ]; then \
-		az acr build -r $(ACR_NAME) -t store-front:$(IMAGE_VERSION) ./src/store-front; \
+	@echo "🔍 Checking store-front:$(IMAGE_VERSION)"
+	@if ! az acr repository show-tags --name $(ACR_NAME) --repository store-front --query "[?@=='$(IMAGE_VERSION)']" -o tsv | grep -q $(IMAGE_VERSION); then \
+		echo "⏳ Building or importing store-front:$(IMAGE_VERSION)..."; \
+		if [ "$(BUILD_STORE_FRONT)" = true ]; then \
+			az acr build -r $(ACR_NAME) -t store-front:$(IMAGE_VERSION) ./src/store-front; \
+		else \
+			az acr import -n $(ACR_NAME) --source ghcr.io/azure-samples/aks-store-demo/store-front:latest --image store-front:$(IMAGE_VERSION); \
+		fi; \
 	else \
-		az acr import -n $(ACR_NAME) --source ghcr.io/azure-samples/aks-store-demo/store-front:latest --image store-front:$(IMAGE_VERSION); \
+		echo "✅ store-front:$(IMAGE_VERSION) already exists. Skipping."; \
 	fi
+
 
 .PHONY: deploy-azure
 # deploy-azure: kustomize toy-store-all-in-one.yaml ## Deploy to AKS cluster

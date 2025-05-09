@@ -89,16 +89,40 @@ stages:
 
 - stage: BuildImages
   dependsOn: TerraformInfra
+  condition: succeeded()
   jobs:
   - job: buildpushImages
     steps:
     - task: AzureCLI@2
+      name: CheckImages
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in to Azure for ACR"
+          echo "🔍 Checking if all images already exist in ACR..."
+          IMAGE_VERSION=$(Build.BuildId)
+          ACR_NAME=toyshopacr12345
+
+          check_image() {
+            az acr repository show-tags --name $ACR_NAME --repository $1 --query "[?@=='$IMAGE_VERSION']" -o tsv | grep -q "$IMAGE_VERSION"
+          }
+
+          if check_image order-service && check_image product-service && check_image store-front; then
+            echo "##vso[task.setvariable variable=skipBuild]true"
+            echo "✅ All images exist. Skipping build stage."
+          else
+            echo "##vso[task.setvariable variable=skipBuild]false"
+            echo "⏳ Some images are missing. Proceeding with build."
+          fi
+
+    - task: AzureCLI@2
+      condition: ne(variables['skipBuild'], 'true')
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
           make get-azure-resources
         displayName: 'Builds and pushes Docker images to ACR'
 
