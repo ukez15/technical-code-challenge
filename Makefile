@@ -64,11 +64,15 @@ deploy-azure: ## Deploy to AKS cluster
 	@echo "Deploying to AKS using Helm..."
 	@az aks get-credentials -n $(AKS_NAME) -g $(RG_NAME)
 	@helm upgrade --install toy-shop ./charts \
-		--set orderService.image.repository=$(ACR_NAME).azurecr.io/order-service:$(IMAGE_VERSION) \
-		--set productService.image.repository=$(ACR_NAME).azurecr.io/product-service:$(IMAGE_VERSION) \
-		--set storeFront.image.repository=$(ACR_NAME).azurecr.io/store-front:$(IMAGE_VERSION) \
+		--set orderService.image.repository=$(ACR_NAME).azurecr.io/order-service \
+		--set orderService.image.tag=$(IMAGE_VERSION) \
+		--set productService.image.repository=$(ACR_NAME).azurecr.io/product-service \
+		--set productService.image.tag=$(IMAGE_VERSION) \
+		--set storeFront.image.repository=$(ACR_NAME).azurecr.io/store-front \
+		--set storeFront.image.tag=$(IMAGE_VERSION) \
 		--namespace toy-shop \
 		--create-namespace
+
 
 .PHONY: clean-azure
 clean-azure: ## Delete kind cluster and kustomization.yaml

@@ -191,7 +191,6 @@ stages:
             --repository=technical-code-challenge \
             --branch=main \
             --path=clusters/prod \
-            --url=https://github.com/ukez15/technical-code-challenge.git \
             --personal \
             --token-auth
       env:
