@@ -203,7 +203,7 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "🔄 Reconciling Flux to pick up any Git changes..."
+          echo "Reconciling Flux to pick up any Git changes..."
           curl -s https://fluxcd.io/install.sh | bash
           export PATH=$PATH:/home/vsts/.flux/bin
           flux reconcile kustomization flux-system --with-source
