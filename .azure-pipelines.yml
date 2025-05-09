@@ -15,7 +15,7 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "✅ Logged in to Azure!"
+          echo "Logged in to Azure!"
 
 - stage: TerraformInfra
   dependsOn: AzureLogin
@@ -31,7 +31,7 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "🔐 Registering AKS provider if needed..."
+          echo "Registering AKS provider if needed..."
           az provider register --namespace Microsoft.ContainerService
           while true; do
             STATUS=$(az provider show --namespace Microsoft.ContainerService --query registrationState -o tsv)
@@ -44,7 +44,7 @@ stages:
           done
 
     - script: |
-        echo "🧱 Installing Terraform..."
+        echo "Installing Terraform..."
         curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
         unzip terraform.zip
         sudo mv terraform /usr/local/bin/
@@ -60,25 +60,25 @@ stages:
           cd infra
           terraform init -upgrade
 
-          echo "🔍 Checking if resource group exists in Azure..."
+          echo "Checking if resource group exists in Azure..."
           if az group exists --name toyshop-rg | grep true; then
-            echo "✅ RG exists — checking if it's in state..."
+            echo "RG exists — checking if it's in state..."
             if ! terraform state list | grep azurerm_resource_group.rg; then
               terraform import azurerm_resource_group.rg "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg"
             fi
           fi
 
-          echo "🔍 Checking if ACR is in state..."
+          echo "Checking if ACR is in state..."
           if ! terraform state list | grep azurerm_container_registry.acr; then
             terraform import azurerm_container_registry.acr "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerRegistry/registries/toyshopacr12345"
           fi
 
-          echo "🔍 Checking if AKS is in state..."
+          echo "Checking if AKS is in state..."
           if ! terraform state list | grep azurerm_kubernetes_cluster.aks; then
             terraform import azurerm_kubernetes_cluster.aks "/subscriptions/$(ARM_SUBSCRIPTION_ID)/resourceGroups/toyshop-rg/providers/Microsoft.ContainerService/managedClusters/toyshop-aks"
           fi
 
-          echo "🚀 Running Terraform Apply"
+          echo "Running Terraform Apply"
           terraform apply -auto-approve
       env:
         TF_VAR_client_id: $(ARM_CLIENT_ID)
@@ -100,7 +100,7 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "🔍 Checking if all images already exist in ACR..."
+          echo "Checking if all images already exist in ACR..."
           IMAGE_VERSION=$(Build.BuildId)
           ACR_NAME=toyshopacr12345
 
@@ -110,10 +110,10 @@ stages:
 
           if check_image order-service && check_image product-service && check_image store-front; then
             echo "##vso[task.setvariable variable=skipBuild]true"
-            echo "✅ All images exist. Skipping build stage."
+            echo "All images exist. Skipping build stage."
           else
             echo "##vso[task.setvariable variable=skipBuild]false"
-            echo "⏳ Some images are missing. Proceeding with build."
+            echo "Some images are missing. Proceeding with build."
           fi
 
     - task: AzureCLI@2
@@ -137,46 +137,68 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "🔐 Logging into AKS"
+          echo "Logging into AKS"
           az aks get-credentials --resource-group toyshop-rg --name toyshop-aks
 
-          echo "🔧 Installing Helm (if not already present)..."
+          echo "Installing Helm (if not already present)..."
           helm version || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-          echo "🔧 Installing Kustomize (if needed)..."
+          echo "Installing Kustomize (if needed)..."
           if ! command -v kustomize >/dev/null 2>&1; then
             curl -s \"https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh\" | bash
             sudo mv kustomize /usr/local/bin/
           fi
 
-          echo "🚀 Running Helm deployment..."
+          echo "Running Helm deployment..."
           make deploy-azure
         displayName: 'Deploy to AKS cluster'
 
 - stage: InstallFlux
   dependsOn: DeployToAKS
+  condition: succeeded()
   jobs:
   - job: fluxInstall
     steps:
     - checkout: self
 
     - task: AzureCLI@2
+      name: CheckFlux
       inputs:
         azureSubscription: 'AzureDevopsSP-MSDN'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          echo "🔑 Getting AKS credentials"
+          echo "Getting AKS credentials..."
           az aks get-credentials --resource-group toyshop-rg --name toyshop-aks
 
-          echo "🔧 Installing Flux CLI"
-          curl -s https://fluxcd.io/install.sh | bash
-          export PATH=$PATH:/home/vsts/.flux/bin
+          echo "Checking if Flux is already installed..."
+          if kubectl get ns flux-system > /dev/null 2>&1; then
+            echo "Flux already installed. Skipping bootstrapping."
+            echo "##vso[task.setvariable variable=skipFlux]true"
+          else
+            echo "Flux not installed yet."
+            echo "##vso[task.setvariable variable=skipFlux]false"
+          fi
 
-          echo "🚀 Bootstrapping Flux"
-          flux bootstrap github \
-            --owner=ukez15 \
-            --repository=technical-code-challenge \
-            --branch=main \
-            --path=clusters/prod \
-            --personal
+  - task: AzureCLI@2
+    condition: ne(variables['skipFlux'], 'true')
+    inputs:
+      azureSubscription: 'AzureDevopsSP-MSDN'
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        echo "🔧 Installing Flux CLI"
+        curl -s https://fluxcd.io/install.sh | bash
+        export PATH=$PATH:/home/vsts/.flux/bin
+
+        echo "Bootstrapping Flux to GitHub..."
+        flux bootstrap github \
+          --owner=ukez15 \
+          --repository=technical-code-challenge \
+          --branch=main \
+          --path=clusters/prod \
+          --url=https://github.com/ukez15/technical-code-challenge.git \
+          --personal \
+          --token-auth
+      env:
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
