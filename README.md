@@ -185,6 +185,43 @@ And now in the pipeline:
 
 ---
 
+## 🌐 4. How to View Your Toy Shop App in Azure
+
+Once everything is deployed to AKS, you’ll want to see the app like a real website!
+
+### 🧠 Step 1: Are You Running on Azure?
+If you used the Azure pipeline and see resources in the [Azure Portal](https://portal.azure.com), then ✅ you are in the **cloud**.
+
+### 🔍 Step 2: Find Your App in Azure
+1. Go to the **toyshop-aks** resource in the Azure Portal
+2. Click on **Kubernetes resources** → **Services and Ingresses**
+3. Look for your service like `store-front`
+
+### 🥇 Option A: External IP (Easiest)
+If your service type is `LoadBalancer` and shows something like:
+
+```
+store-front   LoadBalancer   ...   20.42.88.13
+```
+
+Open your browser and go to:
+
+```
+http://20.42.88.13
+```
+
+🎉 Your Toy Shop app should appear!
+
+### 🥈 Option B: You See "pending" (No IP Yet)
+That means there’s no door to the internet yet. We can fix that by:
+
+- Adding an **ingress controller** (like NGINX)
+- Or updating your Helm chart to expose via `LoadBalancer`
+
+Let us know if you want help doing that! 🚪✨
+
+---
+
 ## 💪 Resilience Features Built-In
 
 - ✅ Terraform **only creates what doesn't exist**

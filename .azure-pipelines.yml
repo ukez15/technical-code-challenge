@@ -143,12 +143,6 @@ stages:
           echo "Installing Helm (if not already present)..."
           helm version || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-          echo "Installing Kustomize (if needed)..."
-          if ! command -v kustomize >/dev/null 2>&1; then
-            curl -s \"https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh\" | bash
-            sudo mv kustomize /usr/local/bin/
-          fi
-
           echo "Running Helm deployment..."
           make deploy-azure
         displayName: 'Deploy to AKS cluster'
