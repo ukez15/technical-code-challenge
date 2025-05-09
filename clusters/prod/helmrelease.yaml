@@ -2,12 +2,16 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: toyshop
-  namespace: toy-store
+  namespace: flux-system  # Flux watches this namespace
 spec:
+  releaseName: toyshop
+  targetNamespace: toy-store  # this is where Helm will deploy the app
+  install:
+    createNamespace: true     # Flux will create the toy-store namespace if it doesn't exist
   interval: 1m
   chart:
     spec:
-      chart: ./charts/aks-store-demo
+      chart: ./charts
       sourceRef:
         kind: GitRepository
         name: toyshop-code
