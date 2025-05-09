@@ -163,7 +163,6 @@ flux bootstrap github \
   --repository=your-repository-name \
   --branch=main \
   --path=clusters/prod \
-  --url=https://github.com/your-github-username/your-repository-name.git \
   --personal \
   --token-auth
 ```
@@ -219,6 +218,60 @@ That means there’s no door to the internet yet. We can fix that by:
 - Or updating your Helm chart to expose via `LoadBalancer`
 
 Let us know if you want help doing that! 🚪✨
+
+---
+
+## 🛠️ 5. Troubleshooting (Like a Curious 5-Year-Old Detective 🕵️)
+
+### ❌ Issue: You Try to Visit the App and See "Site Cannot Be Reached"
+- You got a public IP from AKS, but it doesn’t load in the browser
+
+### 🧪 Step-by-Step Checks:
+
+1. **Are you connected to the cloud cluster?**
+   ```bash
+   az login
+   mv ~/.kube/config ~/.kube/config.bak
+   az aks get-credentials --resource-group toyshop-rg --name toyshop-aks
+   ```
+
+2. **Is your app running?**
+   ```bash
+   kubectl get pods -n toy-shop
+   ```
+   ✅ Make sure they say `Running` and not `CrashLoopBackOff`
+
+3. **Does your service have a public IP?**
+   ```bash
+   kubectl get svc -n toy-shop
+   ```
+   ✅ Check for `store-front` and make sure `EXTERNAL-IP` is not `pending`
+
+4. **Still doesn’t work? Try this:**
+   ```bash
+   curl http://<EXTERNAL-IP>
+   ```
+   ✅ If it shows HTML, it’s working. If not, check pod logs:
+   ```bash
+   kubectl logs deployment/store-front -n toy-shop
+   ```
+
+### 🐞 Bonus: Invalid Image Name Error?
+This means your Helm command might be building the wrong image link.
+
+Here's the wrong version (oops):
+```bash
+--set image.repository=myregistry.azurecr.io/myapp:latest  ❌
+```
+
+And here’s the correct version:
+```bash
+--set image.repository=myregistry.azurecr.io/myapp \
+--set image.tag=latest ✅
+```
+
+👉 Split image and tag into separate values.
+✅ Check your `values.yaml` file matches that format too.
 
 ---
 
