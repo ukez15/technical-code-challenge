@@ -180,25 +180,25 @@ stages:
             echo "##vso[task.setvariable variable=skipFlux]false"
           fi
 
-  - task: AzureCLI@2
-    condition: ne(variables['skipFlux'], 'true')
-    inputs:
-      azureSubscription: 'AzureDevopsSP-MSDN'
-      scriptType: bash
-      scriptLocation: inlineScript
-      inlineScript: |
-        echo "🔧 Installing Flux CLI"
-        curl -s https://fluxcd.io/install.sh | bash
-        export PATH=$PATH:/home/vsts/.flux/bin
+    - task: AzureCLI@2
+      condition: ne(variables['skipFlux'], 'true')
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "Installing Flux CLI"
+          curl -s https://fluxcd.io/install.sh | bash
+          export PATH=$PATH:/home/vsts/.flux/bin
 
-        echo "Bootstrapping Flux to GitHub..."
-        flux bootstrap github \
-          --owner=ukez15 \
-          --repository=technical-code-challenge \
-          --branch=main \
-          --path=clusters/prod \
-          --url=https://github.com/ukez15/technical-code-challenge.git \
-          --personal \
-          --token-auth
+          echo "Bootstrapping Flux to GitHub..."
+          flux bootstrap github \
+            --owner=ukez15 \
+            --repository=technical-code-challenge \
+            --branch=main \
+            --path=clusters/prod \
+            --url=https://github.com/ukez15/technical-code-challenge.git \
+            --personal \
+            --token-auth
       env:
         GITHUB_TOKEN: $(GITHUB_TOKEN)
