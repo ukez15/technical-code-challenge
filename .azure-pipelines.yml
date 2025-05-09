@@ -195,3 +195,15 @@ stages:
             --token-auth
       env:
         GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    - task: AzureCLI@2
+      condition: eq(variables['skipFlux'], 'true')
+      inputs:
+        azureSubscription: 'AzureDevopsSP-MSDN'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "🔄 Reconciling Flux to pick up any Git changes..."
+          curl -s https://fluxcd.io/install.sh | bash
+          export PATH=$PATH:/home/vsts/.flux/bin
+          flux reconcile kustomization flux-system --with-source

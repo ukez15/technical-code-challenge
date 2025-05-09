@@ -274,6 +274,22 @@ And here’s the correct version:
 ✅ Check your `values.yaml` file matches that format too.
 
 ---
+## 🧠 How Flux Works in the Pipeline (Bonus: Smart Updates!)
+
+When the pipeline gets to the Flux step:
+
+- 🧠 It first checks if Flux is already installed in the cluster
+- ✅ If it's **not installed**, it runs `flux bootstrap github` to set it up
+- 🔄 If Flux **is already installed**, it runs:
+
+```bash
+flux reconcile kustomization flux-system --with-source
+```
+
+That means:
+> Flux pulls your latest files from GitHub and updates the cluster if anything changed — like your HelmRelease!
+
+🎯 So if you change `HelmRelease.yaml` or `source.yaml`, those changes will always be picked up — **without reinstalling Flux** every time.
 
 ## 💪 Resilience Features Built-In
 
