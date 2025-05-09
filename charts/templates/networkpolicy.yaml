@@ -1,10 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-all
+  name: allow-frontend-to-order-service
+  namespace: toy-shop
 spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
+  podSelector:
+    matchLabels:
+      app: order-service
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: store-front
 
-#add more rules to allow just frontend to backend if needed
+#Only lets store-front pods reach order-service.
