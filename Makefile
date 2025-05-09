@@ -77,8 +77,6 @@ deploy-azure: ## Deploy to AKS cluster
 .PHONY: clean-azure
 clean-azure: ## Delete kind cluster and kustomization.yaml
 	@az group delete -n $(RG_NAME) -y --no-wait
-	@rm -f kustomization.yaml
-	@rm -rf $(LOCALBIN)
 
 .PHONY: kind-up
 kind-up: ##create kind cluster
