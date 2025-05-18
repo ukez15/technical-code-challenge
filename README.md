@@ -2,7 +2,7 @@
 
 This is your magical Toy Shop where:
 
-* 🏃 You can run it on your own computer (with Docker + Kind!)
+* 🏃You can run it on your own computer (with Docker + Kind!)
 * 🤖 Azure DevOps robots help build, test, and deploy automatically
 * ☁️ The Toy Shop goes live in the cloud (AKS + Flux + Helm)
 * 🔄 And the whole system is smart and **resilient** — it avoids breaking if things already exist!
@@ -24,6 +24,15 @@ Make sure you have these installed:
 * [Kubectl](https://kubernetes.io/docs/tasks/tools/)
 * [Helm](https://helm.sh/)
 * [Make](https://www.gnu.org/software/make/)
+
+To run this app locally:
+
+Clone the repo to your development computer and navigate to the directory:
+
+```bash
+git clone https://github.com/ukez15/technical-code-challenge.git
+cd technical-code-challenge
+```
 
 ### ☸️ Step 2: Run with Kind + Helm
 
@@ -56,7 +65,7 @@ kubectl port-forward svc/store-front 3000:80 -n toy-shop
 
 Visit [http://localhost:3000](http://localhost:3000)
 
-You’re now running your own Toy Shop in Kind! 🏰✨
+You’re now running your own Toy Shop in Kind!
 
 ---
 
